@@ -24,8 +24,22 @@ To run a program (here: `tofu apply`) with secrets from the `cloud` store in its
 There are other commands to interact with stores and secrets. Run `kenv` without arguments to see them.
 
 
+Source Code
+-----------
+
+This project lives on codeberg at https://codeberg.org/snokatt/kenv
+There is a mirror on GitHub at https://github.com/thatfool/kenv
+
+
 Installation
 ------------
+
+To install via homebrew:
+
+    brew tap snokatt/tap https://codeberg.org/snokatt/homebrew-tap
+    brew install snokatt/tap/kenv
+
+To build from source:
 
     swift build -c release
     cp .build/release/kenv /your/favorite/binary/path
@@ -34,7 +48,7 @@ Installation
 Caveats
 -------
 
-If the executable changes (update, rebuild, etc.), kenv needs to be authorized to access its secrets again. The first time you access a store after an update, you will be prompted for your password. Click "always allow" to restore kenv's access. This is separate from touch ID authentication and does not disable it.
+If the executable changes (update, rebuild, etc.), kenv needs to be authorized to access its secrets again. The first time you access a store after an update, you will be prompted for your password. Click "always allow" to restore kenv's access. This is because while kenv gets permission from the OS to work with secrets it creates by default, if you build and install a new version, that version will not inherit this permission for existing secrets. This is a separate permission from touch ID based authentication (or password based) that's required when you actually use the secrets.
 
 
 Third-Party Dependencies
