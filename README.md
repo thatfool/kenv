@@ -1,7 +1,7 @@
 kenv
 ====
 
-A command line tool for macOS that stores environment variables in the login keychain, and executes programs with those variables in their environment. Access to the variables needs authentication, touch ID is supported.
+A command line tool for macOS that stores environment variables in the login keychain, and executes programs with those variables in their environment. Before accessing the variables, kenv requires authentication via touch ID or your account password (see Security Notes below for details on how this is enforced).
 
 The main use case is programs that read secrets like API keys from their environment, but kenv can also be used to manage named profiles for programs that are configured through sets of environment variables, even if they're not secret.
 
@@ -44,6 +44,16 @@ To build from source:
 
     swift build -c release
     cp .build/release/kenv /your/favorite/binary/path
+
+
+Security Notes
+--------------
+
+When you access a store, kenv prompts for touch ID or your account password. This check is implemented and enforced by the kenv application itself, not by the keychain: the secrets are stored as regular login keychain items, and macOS does not require touch ID to read them.
+
+This is a deliberate trade-off. Having the keychain itself enforce touch ID would require storing the secrets in the data protection keychain with an access control list, which is only available to binaries that are code signed with the necessary entitlements. Since kenv is meant to be built from source or installed via homebrew without code signing, it uses the login keychain instead and performs the authentication step in the application.
+
+In practice this means the secrets are protected by the standard login keychain access controls (per-application access, see Caveats below), and the touch ID prompt is an additional layer that kenv adds on top.
 
 
 Caveats
