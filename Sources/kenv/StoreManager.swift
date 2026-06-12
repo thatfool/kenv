@@ -15,6 +15,11 @@ struct StoreManager: Sendable {
         servicePrefix + store
     }
 
+    /// The lock that serializes modifications across concurrent kenv processes.
+    private var lockName: String {
+        servicePrefix + "lock"
+    }
+
     /// Load a store from the keychain in an existing session.
     private func loadStore(_ name: String, from session: AuthenticatedKeychain) throws -> Store {
         do {
@@ -58,8 +63,10 @@ struct StoreManager: Sendable {
 
     /// Delete a store.
     func deleteStore(_ name: String) throws {
-        try keychain.withAuthentication { session in
-            try deleteStore(name, from: session)
+        try withFileLock(name: lockName) {
+            try keychain.withAuthentication { session in
+                try deleteStore(name, from: session)
+            }
         }
     }
 
@@ -78,29 +85,33 @@ struct StoreManager: Sendable {
             throw StoreError.invalidVariableName(name)
         }
 
-        try keychain.withAuthentication { session in
-            var store: Store
-            do {
-                store = try loadStore(storeName, from: session)
-            } catch StoreError.storeNotFound {
-                store = Store()
-            }
+        try withFileLock(name: lockName) {
+            try keychain.withAuthentication { session in
+                var store: Store
+                do {
+                    store = try loadStore(storeName, from: session)
+                } catch StoreError.storeNotFound {
+                    store = Store()
+                }
 
-            store.set(name, value: value)
-            try saveStore(storeName, store: store, to: session)
+                store.set(name, value: value)
+                try saveStore(storeName, store: store, to: session)
+            }
         }
     }
 
     /// Unset a variable in a given store, and delete the keychain if it is now empty.
     func unsetVariable(store storeName: String, name: String) throws {
-        try keychain.withAuthentication { session in
-            var store = try loadStore(storeName, from: session)
-            store.unset(name)
+        try withFileLock(name: lockName) {
+            try keychain.withAuthentication { session in
+                var store = try loadStore(storeName, from: session)
+                store.unset(name)
 
-            if store.isEmpty {
-                try deleteStore(storeName, from: session)
-            } else {
-                try saveStore(storeName, store: store, to: session)
+                if store.isEmpty {
+                    try deleteStore(storeName, from: session)
+                } else {
+                    try saveStore(storeName, store: store, to: session)
+                }
             }
         }
     }

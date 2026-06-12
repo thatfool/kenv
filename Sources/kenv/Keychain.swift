@@ -117,13 +117,26 @@ private struct AuthenticatedSession: AuthenticatedKeychain {
     let context: LAContext
 
     /// Save data to a keychain entry, overwriting existing data.
+    /// Existing entries are updated in place so that a crash cannot leave the entry deleted.
     func save(service: String, data: Data) throws {
-        let deleteQuery: [String: Any] = [
+        let updateQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account
+            kSecAttrAccount as String: account,
+            kSecUseAuthenticationContext as String: context,
+            kSecUseAuthenticationUI as String: kSecUseAuthenticationUISkip
         ]
-        SecItemDelete(deleteQuery as CFDictionary)
+        let attributes: [String: Any] = [
+            kSecValueData as String: data
+        ]
+
+        let updateStatus = SecItemUpdate(updateQuery as CFDictionary, attributes as CFDictionary)
+        if updateStatus == errSecSuccess {
+            return
+        }
+        guard updateStatus == errSecItemNotFound else {
+            throw KeychainError.unexpectedError(updateStatus)
+        }
 
         let addQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
