@@ -10,11 +10,12 @@ struct Kenv: ParsableCommand {
     )
 }
 
-/// kenv set <store> <variable>
+/// kenv set [--no-echo] <store> <variable>
 /// Sets a variable in a store.
 /// Reads the value from standard input.
 /// If standard input is a pipe, it all input is read.
-/// If standard input is a terminal, the input can also be terminated by an empty line.
+/// If standard input is a terminal, the input can also be terminated by an empty line,
+/// and echo can be disabled with --no-echo.
 extension Kenv {
     struct Set: ParsableCommand {
         static let configuration = CommandConfiguration(
@@ -27,17 +28,30 @@ extension Kenv {
         @Argument(help: "The variable name")
         var variable: String
 
+        @Flag(help: "Do not display the value while it is entered")
+        var noEcho: Bool = false
+
         func run() throws {
-            let value = readValue()
+            let value = try readValue()
             let manager = StoreManager()
             try manager.setVariable(store: store, name: variable, value: value)
         }
 
-        private func readValue() -> String {
+        private func readValue() throws -> String {
             let isTerminal = FileHandle.standardInput.isTerminal
 
             if isTerminal {
                 fputs("Enter value: ", stderr)
+            }
+
+            let echoDisabled = isTerminal && noEcho
+            if echoDisabled {
+                try Terminal.disableEcho()
+            }
+            defer {
+                if echoDisabled {
+                    Terminal.restoreEcho()
+                }
             }
 
             var lines: [String] = []

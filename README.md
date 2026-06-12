@@ -15,6 +15,10 @@ Store your API key in the login keychain, in a store called `cloud`:
 
 You can type the secret in, paste it, or if it's in a file, use shell redirection. When typing or pasting, enter an empty line after the secret to finish input.
 
+By default, the secret is displayed while you enter it and remains visible in the terminal scrollback. Pass `--no-echo` to keep it from being displayed:
+
+    kenv set --no-echo cloud API_KEY
+
 Each store can contain multiple environment variables.
 
 To run a program (here: `tofu apply`) with secrets from the `cloud` store in its environment:
