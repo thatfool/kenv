@@ -125,6 +125,7 @@ struct StoreManager: Sendable {
 /// An error during an interaction with a store or the keychain.
 enum StoreError: Error, LocalizedError {
     case storeNotFound(String)
+    case variableNotFound(store: String, name: String)
     case invalidVariableName(String)
     case keychainError(KeychainError)
 
@@ -132,6 +133,8 @@ enum StoreError: Error, LocalizedError {
         switch self {
         case .storeNotFound(let name):
             return "Store '\(name)' not found"
+        case .variableNotFound(let store, let name):
+            return "Variable '\(name)' not found in store '\(store)'"
         case .invalidVariableName(let name):
             return "Invalid environment variable name: '\(name)'"
         case .keychainError(let error):

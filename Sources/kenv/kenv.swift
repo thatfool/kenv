@@ -117,7 +117,7 @@ extension Kenv {
 
             if let variable = variable {
                 guard let value = try manager.getVariable(store: store, name: variable) else {
-                    throw StoreError.storeNotFound(store)
+                    throw StoreError.variableNotFound(store: store, name: variable)
                 }
                 print(formatEnvLine(name: variable, value: value, export: export))
             } else {
