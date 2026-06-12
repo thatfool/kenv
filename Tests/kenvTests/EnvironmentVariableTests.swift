@@ -29,4 +29,12 @@ struct EnvironmentVariableTests {
         #expect(!isValidEnvironmentVariableName("MY@VAR"))
         #expect(!isValidEnvironmentVariableName(""))
     }
+
+    @Test("Invalid environment variable names - non-ASCII")
+    func invalidNonASCII() {
+        #expect(!isValidEnvironmentVariableName("ÜBER_KEY"))
+        #expect(!isValidEnvironmentVariableName("CAFÉ"))
+        #expect(!isValidEnvironmentVariableName("変数"))
+        #expect(!isValidEnvironmentVariableName("MY_VAR_１２３"))
+    }
 }

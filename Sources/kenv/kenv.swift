@@ -31,6 +31,12 @@ extension Kenv {
         @Flag(help: "Do not display the value while it is entered")
         var noEcho: Bool = false
 
+        func validate() throws {
+            guard isValidEnvironmentVariableName(variable) else {
+                throw ValidationError("Invalid environment variable name: '\(variable)'")
+            }
+        }
+
         func run() throws {
             let value = try readValue()
             let manager = StoreManager()
