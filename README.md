@@ -25,6 +25,10 @@ To run a program (here: `tofu apply`) with secrets from the `cloud` store in its
 
     kenv run cloud tofu apply
 
+Some programs can run a command to obtain a secret instead of reading it from the environment, often configured through a `_CMD` variant of a setting. For this, `kenv get` can print a single value with nothing around it:
+
+    kenv get --value cloud API_KEY
+
 There are other commands to interact with stores and secrets. Run `kenv` without arguments to see them.
 
 
@@ -58,6 +62,16 @@ When you access a store, kenv prompts for touch ID or your account password. Thi
 This is a deliberate trade-off. Having the keychain itself enforce touch ID would require storing the secrets in the data protection keychain with an access control list, which is only available to binaries that are code signed with the necessary entitlements. Since kenv is meant to be built from source or installed via homebrew without code signing, it uses the login keychain instead and performs the authentication step in the application.
 
 In practice this means the secrets are protected by the standard login keychain access controls (per-application access, see Caveats below), and the touch ID prompt is an additional layer that kenv adds on top.
+
+Separate from kenv itself, be aware of how environment variables behave once `kenv run` has placed secrets in a program's environment:
+
+- The environment is inherited by every child process the program starts, and by their children in turn, unless a program explicitly cleans it up.
+- Any process running as the same user can read the environment that another process was launched with (for example with `ps -E`).
+- The superuser can read the environment of any process.
+
+In short, treat secrets passed through the environment as visible to every process running as your user, and to root, for as long as the program is running. This is a property of environment variables in general, not of kenv. Using `kenv run` limits the exposure to the lifetime of the program, since the secrets are otherwise only stored in the keychain.
+
+For your own projects that read secrets from the environment, one possible mitigation is to support a `*_CMD` form for sensitive settings: instead of the secret itself, the environment holds a command to execute, and your code reads the secret from that command's output. The `--value` option of `kenv get` makes it print only the value of a secret, so it can serve as such a command.
 
 
 Caveats

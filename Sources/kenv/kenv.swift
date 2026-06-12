@@ -99,10 +99,12 @@ extension Kenv {
     }
 }
 
-/// kenv get [--export] <store> [<variable>]
+/// kenv get [--export] [--value] <store> [<variable>]
 /// Reads variables from a store and writes them to standard output in shell script form.
 /// If a variable name is specified, reads only that variable.
 /// Otherwise, reads all variables.
+/// With --value, writes only the raw value of a single variable, for use with
+/// programs that obtain secrets by running a command.
 extension Kenv {
     struct Get: ParsableCommand {
         static let configuration = CommandConfiguration(
@@ -118,6 +120,20 @@ extension Kenv {
         @Flag(name: .long, help: "Add 'export ' prefix to each line")
         var export: Bool = false
 
+        @Flag(name: .customLong("value"), help: "Output only the raw value, without the variable name")
+        var valueOnly: Bool = false
+
+        func validate() throws {
+            if valueOnly {
+                guard variable != nil else {
+                    throw ValidationError("--value requires a variable name")
+                }
+                guard !export else {
+                    throw ValidationError("--value cannot be combined with --export")
+                }
+            }
+        }
+
         func run() throws {
             let manager = StoreManager()
 
@@ -125,7 +141,11 @@ extension Kenv {
                 guard let value = try manager.getVariable(store: store, name: variable) else {
                     throw StoreError.variableNotFound(store: store, name: variable)
                 }
-                print(formatEnvLine(name: variable, value: value, export: export))
+                if valueOnly {
+                    print(value)
+                } else {
+                    print(formatEnvLine(name: variable, value: value, export: export))
+                }
             } else {
                 let variables = try manager.getAllVariables(store: store)
                 for name in variables.keys.sorted() {
